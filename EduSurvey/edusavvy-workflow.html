@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- skill:chrome -->
+<style>
+/* Credit line — bottom-right */
+.design-ui-credit {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  font: 11px/1 system-ui, sans-serif;
+  color: rgba(128,128,128,0.5);
+  pointer-events: none;
+  z-index: 2147483647;
+  transition: opacity 0.4s ease;
+  user-select: none;
+  letter-spacing: 0.02em;
+}
+
+/* Hide chrome on touch devices */
+@media (hover: none) {
+  .design-ui-credit { display: none; }
+}
+
+/* Print fixes */
+@media print {
+  * {
+    transition: none !important;
+    animation: none !important;
+    box-shadow: none !important;
+  }
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .design-ui-credit { display: none !important; }
+}
+
+</style>
+<script>
+(function () {
+    // Chrome UI (hover devices only): credit badge with idle-fade.
+    // Deferred until body exists since the script may run in <head>.
+    function initChromeUI() {
+        if (!matchMedia('(hover: hover)').matches) return;
+
+        var credit = document.createElement('div');
+        credit.className = 'design-ui-credit';
+        credit.setAttribute('aria-hidden', 'true');
+        credit.innerHTML = '\u{1F49C} by ClickUp Brain';
+        document.body.appendChild(credit);
+
+        var timer = null;
+        var fade = function (out) { credit.style.opacity = out ? '0' : ''; };
+        fade(true);
+        var show = function () {
+            fade(false);
+            clearTimeout(timer);
+            timer = setTimeout(function () { fade(true); }, 3000);
+        };
+        document.addEventListener('mousemove', show);
+        show();
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initChromeUI);
+    } else {
+        initChromeUI();
+    }
+})();
+
+</script>
+<!-- /skill:chrome -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduSavvy Multi-Agent Learning Ecosystem — n8n Workflow</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --canvas-bg: oklch(97% 0.005 250);
+  --grid-color: oklch(90% 0.008 250);
+  --node-shadow: 0 2px 8px oklch(20% 0.02 250 / 0.08), 0 1px 3px oklch(20% 0.02 250 / 0.06);
+  --node-shadow-hover: 0 8px 24px oklch(20% 0.02 250 / 0.12), 0 2px 8px oklch(20% 0.02 250 / 0.08);
+  --text-primary: oklch(22% 0.01 250);
+  --text-secondary: oklch(45% 0.01 250);
+  --text-tertiary: oklch(60% 0.01 250);
+  --border: oklch(88% 0.008 250);
+  --connector: oklch(70% 0.03 250);
+
+  --trigger-bg: oklch(96% 0.03 145);
+  --trigger-accent: oklch(55% 0.18 145);
+  --agent-bg: oklch(96% 0.025 265);
+  --agent-accent: oklch(55% 0.16 265);
+  --review-bg: oklch(96% 0.03 55);
+  --review-accent: oklch(58% 0.18 55);
+  --ethics-bg: oklch(96% 0.03 15);
+  --ethics-accent: oklch(55% 0.18 15);
+  --output-bg: oklch(96% 0.025 200);
+  --output-accent: oklch(50% 0.15 200);
+  --storage-bg: oklch(96% 0.02 160);
+  --storage-accent: oklch(50% 0.15 160);
+
+  --label-rank: oklch(50% 0.2 300);
+  --label-hunt: oklch(50% 0.18 200);
+  --label-guard: oklch(50% 0.2 15);
+  --label-pride: oklch(52% 0.18 55);
+  --label-trail: oklch(48% 0.15 145);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--canvas-bg);
+  min-height: 100vh;
+  overflow-x: auto;
+  font-optical-sizing: auto;
+}
+
+.workflow-canvas {
+  position: relative;
+  min-width: 100vw;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle, var(--grid-color) 1px, transparent 1px);
+  background-size: 24px 24px;
+  padding: 48px 64px;
+}
+
+.workflow-header {
+  position: sticky;
+  left: 64px;
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.workflow-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: oklch(55% 0.16 265);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--node-shadow);
+}
+
+.workflow-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: white;
+  fill: none;
+  stroke-width: 2;
+}
+
+.workflow-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.workflow-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.pipeline {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  padding-bottom: 80px;
+}
+
+.stage {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.node {
+  position: relative;
+  width: 260px;
+  border-radius: 14px;
+  background: white;
+  border: 1.5px solid var(--border);
+  box-shadow: var(--node-shadow);
+  transition: box-shadow 300ms var(--ease-out-expo), transform 300ms var(--ease-out-expo);
+  cursor: default;
+}
+
+.node:hover {
+  box-shadow: var(--node-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.node-header {
+  padding: 14px 16px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.node-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.node-icon svg, .node-icon i {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+.node-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.node-type {
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 1px;
+}
+
+.node-body {
+  padding: 12px 16px 14px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.node-body code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  background: oklch(95% 0.005 250);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+
+.node-body .example {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: oklch(97% 0.005 250);
+  border-radius: 8px;
+  font-style: italic;
+  color: var(--text-tertiary);
+  font-size: 0.68rem;
+}
+
+.node-port {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid var(--connector);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.node-port.input { left: -6px; }
+.node-port.output { right: -6px; }
+
+.connector {
+  width: 48px;
+  height: 2px;
+  background: var(--connector);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.connector::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: -3px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid var(--connector);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+
+/* Node type styles */
+.node--trigger .node-icon { background: var(--trigger-bg); }
+.node--trigger .node-icon svg { stroke: var(--trigger-accent); }
+.node--trigger { border-color: oklch(85% 0.04 145); }
+
+.node--agent .node-icon { background: var(--agent-bg); }
+.node--agent .node-icon svg { stroke: var(--agent-accent); }
+.node--agent { border-color: oklch(85% 0.04 265); }
+
+.node--review .node-icon { background: var(--review-bg); }
+.node--review .node-icon svg { stroke: var(--review-accent); }
+.node--review { border-color: oklch(85% 0.04 55); }
+
+.node--ethics .node-icon { background: var(--ethics-bg); }
+.node--ethics .node-icon svg { stroke: var(--ethics-accent); }
+.node--ethics { border-color: oklch(85% 0.04 15); }
+
+.node--output .node-icon { background: var(--output-bg); }
+.node--output .node-icon svg { stroke: var(--output-accent); }
+.node--output { border-color: oklch(85% 0.04 200); }
+
+.node--storage .node-icon { background: var(--storage-bg); }
+.node--storage .node-icon svg { stroke: var(--storage-accent); }
+.node--storage { border-color: oklch(85% 0.04 160); }
+
+/* Labels */
+.label {
+  position: absolute;
+  top: -28px;
+  left: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  color: white;
+}
+
+.label--rank { background: var(--label-rank); }
+.label--hunt { background: var(--label-hunt); }
+.label--guard { background: var(--label-guard); }
+.label--pride { background: var(--label-pride); }
+.label--trail { background: var(--label-trail); }
+
+/* Trail Memory Section */
+.trail-section {
+  position: sticky;
+  left: 64px;
+  margin-top: 32px;
+  max-width: 900px;
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--node-shadow);
+  padding: 20px 24px;
+}
+
+.trail-section h3 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trail-section h3 .label {
+  position: static;
+}
+
+.trail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.trail-item {
+  padding: 12px 14px;
+  background: oklch(97% 0.005 145);
+  border-radius: 10px;
+  border: 1px solid oklch(92% 0.01 145);
+}
+
+.trail-item-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--label-trail);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.trail-item-desc {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+/* Two-row layout for wider workflows */
+.pipeline-container {
+  overflow-x: auto;
+  padding-bottom: 16px;
+}
+
+.pipeline-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 48px;
+}
+
+.pipeline-row:last-child { margin-bottom: 0; }
+
+/* Animations */
+.node {
+  animation: nodeIn 500ms var(--ease-out-expo) backwards;
+}
+
+.stage:nth-child(1) .node { animation-delay: 0ms; }
+.stage:nth-child(2) .node { animation-delay: 60ms; }
+.stage:nth-child(3) .node { animation-delay: 120ms; }
+.stage:nth-child(4) .node { animation-delay: 180ms; }
+.stage:nth-child(5) .node { animation-delay: 240ms; }
+.stage:nth-child(6) .node { animation-delay: 300ms; }
+.stage:nth-child(7) .node { animation-delay: 360ms; }
+.stage:nth-child(8) .node { animation-delay: 420ms; }
+.stage:nth-child(9) .node { animation-delay: 480ms; }
+
+@keyframes nodeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.connector {
+  animation: connectorIn 400ms var(--ease-out-expo) backwards;
+}
+
+.stage:nth-child(2) .connector { animation-delay: 80ms; }
+.stage:nth-child(3) .connector { animation-delay: 140ms; }
+.stage:nth-child(4) .connector { animation-delay: 200ms; }
+.stage:nth-child(5) .connector { animation-delay: 260ms; }
+.stage:nth-child(6) .connector { animation-delay: 320ms; }
+.stage:nth-child(7) .connector { animation-delay: 380ms; }
+.stage:nth-child(8) .connector { animation-delay: 440ms; }
+.stage:nth-child(9) .connector { animation-delay: 500ms; }
+
+@keyframes connectorIn {
+  from { opacity: 0; transform: scaleX(0); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+.trail-section {
+  animation: nodeIn 500ms var(--ease-out-expo) 600ms backwards;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: oklch(80% 0.01 250); border-radius: 4px; }
+
+@media (max-width: 768px) {
+  .workflow-canvas { padding: 24px 20px; }
+  .workflow-header { left: 20px; }
+  .trail-section { left: 20px; }
+  .node { width: 220px; }
+}
+</style>
+</head>
+<body>
+<div class="workflow-canvas">
+  <div class="workflow-header">
+    <div class="workflow-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </div>
+    <div>
+      <div class="workflow-title">EduSavvy Multi-Agent Learning Ecosystem</div>
+      <div class="workflow-subtitle">n8n Workflow: AI-Powered Educational Assistant for East African Secondary Schools</div>
+    </div>
+  </div>
+
+  <div class="pipeline-container">
+    <div class="pipeline">
+      <!-- 1. Manual Trigger -->
+      <div class="stage">
+        <div class="node node--trigger">
+          <div class="node-header">
+            <div class="node-icon">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M5 3l14 9-14 9V3z" stroke-linejoin="round"/></svg>
+            </div>
+            <div>
+              <div class="node-name">Manual Trigger</div>
+              <div class="node-type">Trigger</div>
+            </div>
+          </div>
+          <div class="node-body">
+            Accept student question input.
+            <div class="example">"Explain photosynthesis."</div>
+          </div>
+          <div class="node-port output"></div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="stage">
+        <div class="connector"></div>
+      </div>
+
+      <!-- 2. Curriculum Scout Agent -->
+      <div class="stage">
+        <div class="node node--agent">
+          <span class="label label--rank">RANK</span>
+          <div class="node-header">
+            <div class="node-icon">
+              <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            </div>
+            <div>
+              <div class="node-name">Curriculum Scout Agent</div>
+              <div class="node-type">AI Agent</div>
+            </div>
+          </div>
+          <div class="node-body">
+            Identify curriculum from question context.<br>
+            <code>Role:</code> Classification<br>
+            <code>Authority:</code> Curriculum matching<br>
+            <code>Kill Switch:</code> Stop if unresolved
+            <div class="example">Output: Kenya CBC Grade 8</div>
+          </div>
+          <div class="node-port input"></div>
+          <div class="node-port output"></div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="stage">
+        <div class="connector"></div>
+      </div>
+
+      <!-- 3. Context Guardian Agent -->
+      <div class="stage">
+        <div class="node node--agent">
+          <span class="label label--hunt">HUNT</span>
+          <div class="node-header">
+            <div class="node-icon">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div>
+              <div class="node-name">Context Guardian Agent</div>
+              <div class="node-type">AI Agent</div>
+            </div>
+          </div>
+          <div class="node-body">
+            Replace Western examples with East African context. Local relevance prioritized.
+            <div class="example">Maize farming in Trans Nzoia instead of maple trees</div>
+          </div>
+          <div class="node-port input"></div>
+          <div class="node-port output"></div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="stage">
+        <div class="connector"></div>
+      </div>
+
+      <!-- 4. Language Coach Agent -->
+      <div class="stage">
+        <div class="node node--agent">
+          <span class="label label--hunt">HUNT</span>
+          <div class="node-header">
+            <div class="node-icon">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </div>
+            <div>
+              <div class="node-name">Language Coach Agent</div>
+              <div class="node-type">AI Agent</div>
+            </div>
+          </div>
+          <div class="node-body">
+            Simplify explanations for secondary school level. Clarity over complexity.
+            <div class="example">"Plants use sunlight to make food just like maize plants need sunlight to grow."</div>
+          </div>
+          <div class="node-port input"></div>
+          <div class="node-port output"></div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="stage">
+        <div class="connector"></div>
+      </div>
+
+      <!-- 5. PRIDE Review Point -->
+      <div class="stage">
+        <div class="node node--review">
+          <span class="label label--pride">PRIDE</span>
+          <div class="node-header">
+            <div class="node-icon">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            </div>
+            <div>
+              <div class="node-name">PRIDE Review Point</div>
+              <div class="node-type">Review Gate</div>
+            </div>
+          </div>
+          <div class="node-body">
+            Pause for human review. Verify curriculum alignment, readability, cultural relevance, explainability.
+          </div>
+          <div class="node-port input"></div>
+          <div class="node-port output"></div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="stage">
+        <div class="connector"></div>
+      </div>
+
+      <!-- 6. Ethics Guardian Agent -->
+      <div class="stage">
+        <div class="node node--ethics">
+          <span class="label label--guard">GUARD</span>
+          <div class="node-header">
+            <div class="node-icon">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div>
+              <div class="node-name">Ethics Guardian Agent</div>
+              <div class="node-type">AI Agent</div>
+            </div>
+          </div>
+          <div class="node-body">
+            <code>Guardrails</code> <code>Audit Trail</code><br>
+            <code>Red Team</code> <code>Dignity</code><br>
+            <code>Pattern Detection</code>
+            <div class="example">Output: Approved / Rejected</div>
+          </div>
+          <div class="node-port input"></div>
+          <div class="node-port output"></div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="stage">
+        <div class="connector"></div>
+      </div>
+
+      <!-- 7. Community Learning Agent -->
+      <div class="stage">
+        <div class="node node--agent">
+          <span class="label label--hunt">HUNT</span>
+          <div class="node-header">
+            <div class="node-icon">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            </div>
+            <div>
+              <div class="node-name">Community Learning Agent</div>
+              <div class="node-type">AI Agent</div>
+            </div>
+          </div>
+          <div class="node-body">
+            Generate collaborative learning activity for peer discussion.
+            <div class="example">"Discuss with classmates why plants near windows grow better."</div>
+          </div>
+          <div class="node-port input"></div>
+          <div class="node-port output"></div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="stage">
+        <div class="connector"></div>
+      </div>
+
+      <!-- 8. Google Sheets -->
+      <div class="stage">
+        <div class="node node--storage">
+          <span class="label label--trail">TRAIL</span>
+          <div class="node-header">
+            <div class="node-icon">
+              <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg>
+            </div>
+            <div>
+              <div class="node-name">Google Sheets</div>
+              <div class="node-type">Storage</div>
+            </div>
+          </div>
+          <div class="node-body">
+            Store: Question, Curriculum, Local Context, Ethics Status, Final Response
+          </div>
+          <div class="node-port input"></div>
+          <div class="node-port output"></div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="stage">
+        <div class="connector"></div>
+      </div>
+
+      <!-- 9. Final Output -->
+      <div class="stage">
+        <div class="node node--output">
+          <div class="node-header">
+            <div class="node-icon">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+            </div>
+            <div>
+              <div class="node-name">Final Output</div>
+              <div class="node-type">Response</div>
+            </div>
+          </div>
+          <div class="node-body">
+            Return localized explanation, collaborative activity, and curriculum-aligned learning support.
+          </div>
+          <div class="node-port input"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRAIL Memory Section -->
+  <div class="trail-section">
+    <h3>
+      <span class="label label--trail">TRAIL</span>
+      Memory Architecture
+    </h3>
+    <div class="trail-grid">
+      <div class="trail-item">
+        <div class="trail-item-title">Transient</div>
+        <div class="trail-item-desc">Current student question in working memory</div>
+      </div>
+      <div class="trail-item">
+        <div class="trail-item-title">Relational</div>
+        <div class="trail-item-desc">Curriculum links and subject mappings</div>
+      </div>
+      <div class="trail-item">
+        <div class="trail-item-title">Archival</div>
+        <div class="trail-item-desc">Google Sheets persistent records</div>
+      </div>
+      <div class="trail-item">
+        <div class="trail-item-title">Inheritance</div>
+        <div class="trail-item-desc">Reuse prior learning context across sessions</div>
+      </div>
+      <div class="trail-item">
+        <div class="trail-item-title">Land Rights</div>
+        <div class="trail-item-desc">School retains full ownership of all records</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
